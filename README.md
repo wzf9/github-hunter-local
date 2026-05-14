@@ -1,98 +1,236 @@
-# 🚀 GitHub Hunter: 热门项目预测器
+# 🚀 GitHub Hunter · 本地化版
 
-> **在项目爆火前的 24 小时，通过数据分析捕捉潜在大黑马。**
+> **在项目爆火前的 24 小时,通过 GitHub 全量事件流捕捉潜在大黑马。**
+> 不依赖 BigQuery、不依赖 GCP,纯本地 parquet 倒排索引 + DuckDB SQL。
 
----
-
-## 💡 为什么需要它？
-
-在 GitHub 上，**“信息差 = 机会”**。
-
-通常我们获取热门项目的途径：
-- **GitHub Trending**: 只有十几条记录，且上榜时通常已积累数千 Star，失去了先机。
-- **科技新闻/自媒体**: 往往是二手甚至三手消息，零散且滞后。
-
-**GitHub Hunter 的原理**：
-直接分析 GitHub 全量数据，实时监控 24 小时内异常增长的种子项目。我们不看它有多少 Star，我们看它 Star 的**加速度**。
+本项目改造自 [chmod777john/github-hunter](https://github.com/chmod777john/github-hunter)。原版用 Google BigQuery 跑 `githubarchive.day.*` 表来统计最近 24 小时的 `WatchEvent`,需要 GCP 账号、SDK 与潜在查询费用。本仓库把数据源换成 [GH Archive](https://www.gharchive.org) 的原始 hourly `.json.gz`,加上**小时级增量缓存**与 **DuckDB 离线 SQL 分析**,把整套流程压成一个零依赖外部云服务的本地工具链。
 
 ---
 
-## 🏆 战绩榜 (预言成真)
+## ✨ 与原版的关键差异
 
-本项目不仅是理论，更有实战记录。我们在项目发布极早期便精准捕捉到了以下“黑马”：
-
-### 1. MagicQuill (图像编辑系统)
-- **发现时间**：2024.11.16 04:22 (北京时间) —— **距项目公开仅 17 小时**。
-- **发现时状态**：约 200 Stars。
-- **当前状态**：2k+ Stars。
-- **证据记录**：
-![MagicQuill Growth](https://github.com/user-attachments/assets/33187bbc-f6af-460d-9433-75ea07d89595)
-
-### 2. 其他早期捕捉案例
-| 项目名称 | 关联公司/组织 | 状态 |
-| :--- | :--- | :--- |
-| `microsoft/TRELLIS` | Microsoft | 持续火爆 |
-| `lmnr-ai/lmnr` | LMNR AI | 快速增长 |
-| `PolymathicAI/the_well` | PolymathicAI | 潜力巨大 |
-
-<div align="center">
-  <img width="32%" src="https://github.com/user-attachments/assets/dc744691-1bb8-4898-afcd-ce6242b5599e" />
-  <img width="32%" src="https://github.com/user-attachments/assets/368cf649-fd9f-48ae-8171-e8c31a75b878" />
-  <img width="32%" src="https://github.com/user-attachments/assets/0b45fe07-3fc2-4d75-afcd-43eff11ef506" />
-</div>
+| 维度 | 原版 (BigQuery) | 本仓库 (GH Archive + DuckDB) |
+| --- | --- | --- |
+| 数据源 | `githubarchive.day.*` | `data.gharchive.org/*.json.gz` |
+| 外部依赖 | GCP 账号、`gcloud`、`google-cloud-bigquery` | 仅需 Python + 公网 |
+| 单次成本 | 扫表数十 GB,可能产生 BigQuery 费用 | 首次 600–700 MB 流量,之后稳态 ~30 MB |
+| 历史能力 | 仅一次性查询 | 本地累积 1 年 hourly 倒排索引 |
+| 分析能力 | 一条 SQL | star 曲线 / 任意日 Top / 加速度榜 / 黑马 / 幽灵仓库 |
+| 运行频率 | 通常每天 1 次 | 推荐每小时 1 次,增量极小 |
 
 ---
 
-## 🕵️ 特别侦查：揭开 GitHub “幽灵仓库” 幕后黑手
+## 🧱 项目结构
 
-**GitHub Hunter 不仅能寻找“明珠”，更能识别“诡计”。**
-
-在 2024.12.4 的一次日常数据筛查中，我们利用本工具发现了一起波及全球的 GitHub 恶意软件钓鱼事件。
-
-- **异常发现**：通过数据监控，我们捕捉到了大量“建仓 -> 取得高赞 -> 删库 -> 再次创建”的幽灵行为。
-- **侦查结果**：单枪匹马追踪 180 多个虚假账号，揭露了跨越 4 年、涉及 GitHub 大 V 的恶意软件分发链条。
-- **深度复盘**：[知乎文章 | GitHub 惊现“幽灵仓库”：我是如何通过大数据抓出幕后黑手的](https://zhuanlan.zhihu.com/p/11211528144)
-- **铁证存证**：[Arweave 区块链记录](https://viewblock.io/arweave/tx/Cppr-Bus0TxC6_zqD-sJitVz4Ne3sR0noJknsuyhZ4Q) (所有恶意仓库列表及证据已上链，不可篡改)。
-
----
-
-## 🔗 硬核背书：区块链不可篡改存证
-
-为了证明我们不是“事后诸葛亮”，所有核心发现都会在第一时间写入区块链，作为**时间戳预言**。
-
-- **Walrus 存证**：[校验链接](https://walruscan.com/testnet/blob/lLv2o4NNyroFcFjrLUiH0LW0tHj4_ulaSYyZ4H_K_sE) (记录了 2024.11.16 的原始发现文件)。
-- **原始文件**：[ArDrive 下载](https://app.ardrive.io/#/file/554684f0-47e8-431c-b949-fc30e8f85758/view)。
-- **自验证方法**：下载文件后运行 `walrus --blob-id <filename>`，校验 ID 是否与 `lLv2o4NN...` 一致。
-
-- **Arweave 证据**：[查看交易](https://viewblock.io/arweave/tx/gMe1knnXrWoRmCF9itxrQhYIMeyloxfyzfCEcnOl9Hg)。
+```
+github-hunter/
+├── workspace.py          # 自动建目录 + .env 模板 + 路径锚定
+├── main.py               # ingest:GH Archive → .cache/,产出 24h 滑窗 result.csv
+├── analyze.py            # 离线分析库:DuckDB SQL 跑在 .cache/ 上
+├── daily_report.py       # 每日报告 + 可选 AI 摘要 + 可选 Webhook 推送
+├── requirements.txt
+├── .env                  # 首次运行自动生成模板,填 token 后即可使用
+├── .gitignore            # 自动生成,默认忽略 .cache / result / reports
+├── .cache/               # 自动创建,hourly parquet(每文件 1–3 MB)
+├── result/               # main.py 产出,result_YYYY-MM-DD.csv
+├── reports/              # daily_report.py 产出,csv + md
+└── web/public/results/   # 给前端消费的 result.csv 副本(可选)
+```
 
 ---
 
-## 🛠️ 如何使用？
+## ⚡ 快速开始
 
-1. 克隆本仓库。
-2. 打开 `index.ipynb` 按照步骤运行分析脚本。
-3. 你也可以查看 `predictions.md` 获取最新的预测报告。
+```bash
+# 1. 安装依赖
+pip install -r requirements.txt
 
----
+# 2. 首次运行(会自动建好所有目录与 .env 模板,然后停下来让你填 token)
+python main.py
 
-## 🗺️ 未来路线 (Roadmap)
+# 3. 编辑 .env,填入 GH_TOKEN(必填) 与 OPENROUTER_API_KEY(可选)
+# .env 路径: 项目根目录/.env
 
-- [ ] **聚合搜索**：集成 GitHub + ProductHunt + HackerNews 数据源。
-- [ ] **AI 评分**：利用 LLM 对项目 README 进行深度解析，评估其实际落地价值。
-- [ ] **自动化预言**：发现好项目自动自动铸造 NFT/存证，构建自动化信用体系。
+# 4. 正式跑
+python main.py               # ingest + 24h 滑窗,产出 result/result_YYYY-MM-DD.csv
+python analyze.py            # 命令行直接预览加速度榜 / 黑马榜
+python daily_report.py       # 生成 reports/daily_YYYY-MM-DD.md
+```
 
----
-
-## 👥 交流与合作
-
-欢迎程序员、自媒体人、高校学生及创投圈的朋友加入讨论。
-
-**加入社群**：
-扫描下方二维码。如果二维码过期，请添加微信号：`drinking-soda` (备注：GitHub Hunter)。
-
-<img width="759" height="907" alt="image" src="https://github.com/user-attachments/assets/3218abaa-65c9-4bb9-917c-ed906183d6c2" />
+**首次完整 ingest** 约下载 600–700 MB(24 个 hourly 文件),耗时 3–5 分钟;**第二次起**只下载新进窗口的 1–2 个文件,通常 30 秒内完成。
 
 ---
 
-*“在 AI 时代，捕捉趋势的能力比掌握知识本身更重要。”*
+## 🔑 环境变量
+
+所有变量集中在项目根目录的 `.env` 中(由首次运行自动生成模板)。
+
+| 变量 | 是否必填 | 说明 |
+| --- | --- | --- |
+| `GH_TOKEN` | **必填** | [GitHub PAT](https://github.com/settings/tokens),勾 `public_repo` 只读即可 |
+| `OPENROUTER_API_KEY` | 可选 | 用于生成项目 AI 总结与日报开篇。留空则自动跳过 |
+| `REPORT_WEBHOOK_URL` | 可选 | 日报推送 webhook(企业微信 / Telegram / 通用) |
+| `REPORT_WEBHOOK_STYLE` | 可选 | `wecom` / `tg` / `raw`,默认 `raw` |
+| `HUNTER_HOME` | 可选 | 工作目录绝对路径,优先级高于 `cwd`,用于定时任务锚定 |
+| `HUNTER_AUTO_BOOTSTRAP` | 可选 | `0` 可禁用 import 时的自动目录创建 |
+
+---
+
+## 🛰️ 数据流与缓存
+
+整套流程的核心是把 GH Archive 的 hourly 文件**只解析一次、永久落盘**。
+
+```
+ GH Archive (.json.gz)
+        │
+        ▼  解析 WatchEvent → Counter(repo_name → count)
+ .cache/YYYY-MM-DD-H.parquet     (~1–3 MB / hour)
+        │
+        ├─────►  main.py:最近 24 小时 → result.csv
+        │
+        └─────►  analyze.py:DuckDB SQL 任意时段聚合
+                    │
+                    └─►  daily_report.py:reports/*.csv + daily.md
+```
+
+**完结判定**:某小时距当前 UTC ≥ 2 小时才被认为"已完结",才会落盘;否则只在内存里参与本次聚合,下次再下载校验。这避免了把还在续传的 gzip 缓存成永久脏数据。
+
+**缓存清理**:`KEEP_DAYS=365`,超过一年的旧 parquet 会被 `prune_cache()` 自动删除。一年合计约 8760 个文件、10–25 GB,普通 SSD 完全装得下。
+
+---
+
+## 🧪 离线分析能力(`analyze.py`)
+
+所有函数共享一个 DuckDB 视图 `events(hour, repo_name, count)`,在 `.cache/*.parquet` 上原地执行 SQL,无需预合并文件。
+
+```python
+from analyze import (
+    star_curve, top_n_on_day, top_n_on_week,
+    fast_growing, acceleration_board, ghost_repo_candidates,
+)
+
+# 1) 单仓库 star 增长曲线(默认最近 90 天,按日聚合)
+star_curve("Tencent/HunyuanVideo", freq="day")
+
+# 2) 历史任意一天 Top 100
+top_n_on_day("2026-05-13", n=100)
+
+# 3) 任意一周 Top 100
+top_n_on_week("2026-05-11", n=100)   # week_start 必须是周一(可选语义)
+
+# 4) 连续 3 天每天 >= 50 stars 的"黑马"(回看 14 天)
+fast_growing(streak_days=3, daily_threshold=50, lookback_days=14)
+
+# 5) 今日 vs 过去 7 日均值的加速度榜
+acceleration_board(min_today=20, top_n=100)
+
+# 6) 幽灵仓库候选:有 stars 但 GraphQL 查不到(被删/被设私)
+ghost_repo_candidates(lookback_days=7, min_stars=30)
+```
+
+---
+
+## 📰 每日报告(`daily_report.py`)
+
+每次运行会:
+
+1. 在 `.cache/` 上跑四种分析,落到 `reports/{name}_YYYY-MM-DD.csv`;
+2. 用 `to_markdown` 拼出一份 Markdown 日报;
+3. 若设置了 `OPENROUTER_API_KEY`,用 LLM 在开头加一段 200 字总览;
+4. 若设置了 `REPORT_WEBHOOK_URL`,推送到 webhook;否则只写文件。
+
+支持的 webhook 风格:
+
+```env
+# 企业微信群机器人
+REPORT_WEBHOOK_URL=https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=xxx
+REPORT_WEBHOOK_STYLE=wecom
+
+# Telegram Bot
+REPORT_WEBHOOK_URL=https://api.telegram.org/bot<token>/sendMessage?chat_id=<id>
+REPORT_WEBHOOK_STYLE=tg
+
+# 通用 JSON {"text": "..."}
+REPORT_WEBHOOK_URL=https://your.endpoint/hook
+REPORT_WEBHOOK_STYLE=raw
+```
+
+---
+
+## 🕒 定时调度
+
+### Windows 任务计划程序
+
+**每小时 ingest**
+
+- 程序或脚本:`python`
+- 添加参数:`E:\path\to\github-hunter\main.py`
+- 起始于:`E:\path\to\github-hunter`
+- 触发器:每天 00:05,重复每 1 小时,持续 1 天,启用
+
+**每日报告(国内 09:00 = UTC 01:00)**
+
+- 程序或脚本:`python`
+- 添加参数:`E:\path\to\github-hunter\daily_report.py`
+- 起始于:`E:\path\to\github-hunter`
+- 触发器:每天 09:00
+
+如果任务调度器吞掉了 `cwd`,在系统环境变量里加 `HUNTER_HOME=E:\path\to\github-hunter` 即可,`workspace.py` 会强制把根目录锚定到这里。
+
+### Linux / macOS (cron)
+
+```cron
+# 每小时 ingest
+5 * * * * HUNTER_HOME=/opt/github-hunter /usr/bin/python3 /opt/github-hunter/main.py >> /var/log/hunter.log 2>&1
+
+# 每日 09:00 报告
+0 9 * * * HUNTER_HOME=/opt/github-hunter /usr/bin/python3 /opt/github-hunter/daily_report.py >> /var/log/hunter.log 2>&1
+```
+
+### GitHub Actions(零本地依赖)
+
+把 `.cache/` 提交到一个私有仓库 / 用 [actions/cache](https://github.com/actions/cache) 持久化,定时任务即可在 GitHub 的免费 runner 上跑完整套流程。
+
+---
+
+## ❓ FAQ
+
+**Q1. 第一次跑出现 `<Code>NoSuchKey</Code>` 怎么办?**
+那是 GH Archive 在 S3 上的 404,通常因为请求了未来或刚刚结束的 1 小时(归档延迟 30–90 分钟)。`fetch_hour()` 对 404 是静默跳过的,不影响主流程。
+
+**Q2. PowerShell 里 `curl -I` 卡住要 Uri?**
+PowerShell 的 `curl` 是 `Invoke-WebRequest` 的别名,`-I` 不被识别。改用 `curl.exe -I <url>`,或 `Invoke-WebRequest -Method Head -Uri <url>`。
+
+**Q3. `pip install dotenv` 装错了?**
+正确包名是 `python-dotenv`,代码里 `import dotenv` 是对的。PyPI 上同名的 `dotenv` 是另一个不相关的小项目,**不要装**。
+
+**Q4. 缓存目录越来越大怎么办?**
+默认 `KEEP_DAYS=365` 自动清理。如果硬盘紧张,改成 90 或 180 即可;也可以每周末把 7 天前的 hourly 合并成 weekly parquet,文件数从几千降到几十。
+
+**Q5. 想加 BigQuery 同步备份?**
+仍然可以。`main.py` 的 ingest 完全是本地操作,你可以在 `prune_cache` 之后加一个 `bq load` 或 `gcloud storage cp` 步骤把 parquet 同步上去,与本地工作流不冲突。
+
+---
+
+## 🛣️ Roadmap
+
+- [ ] **聚合搜索**:集成 ProductHunt / HackerNews / arXiv 数据源,做跨平台热度交叉验证。
+- [ ] **README 深度评分**:用 LLM 对前 N 项目的 README 做"实际落地价值"打分。
+- [ ] **DuckDB UI**:基于 `.cache/` 直接起一个本地 Web 面板,支持任意 SQL 查询与图表。
+- [ ] **NFT/区块链存证**:把每日的"黑马预言"自动上链(对齐原版的时间戳预言玩法)。
+
+---
+
+## 📝 License
+
+继承原仓库 [chmod777john/github-hunter](https://github.com/chmod777john/github-hunter) 的开源协议(MIT)。改造与本地化部分以同等协议发布。
+
+---
+
+## 🙏 致谢
+
+- [chmod777john](https://github.com/chmod777john) —— 原版 github-hunter 的算法思路。
+- [Ilya Grigorik / GH Archive](https://www.gharchive.org) —— 持续 10+ 年免费开放的 GitHub 公共事件流。
+- [DuckDB](https://duckdb.org) —— 让"本地一份 parquet 目录当数据仓库用"成为可能。
+
+*内容由 AI 生成仅供参考*
