@@ -1,6 +1,8 @@
 MIT License
 
-Copyright (c) 2026 wzf9
+Copyright (c) 2024 chmod777john (original work)
+
+Copyright (c) 2026 wzf9 (modifications and local adaptation)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
