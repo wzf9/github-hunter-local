@@ -1,0 +1,7 @@
+.env
+.cache/
+result/
+reports/
+web/public/results/
+__pycache__/
+*.pyc

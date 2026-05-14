@@ -1,0 +1,8 @@
+requests 
+pandas 
+pyarrow 
+duckdb 
+tqdm 
+python-dotenv 
+openai 
+tabulate
