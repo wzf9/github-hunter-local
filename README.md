@@ -287,6 +287,7 @@ git remote add origin https://github.com/your-github-name/github-hunter-local.gi
 git push -u origin main
 
 #设置代理
+#根据你的代理协议填写
 $env:HTTP_PROXY="http://127.0.0.1:3067"
 $env:HTTPS_PROXY="http://127.0.0.1:3067"
 git push -u origin main
@@ -294,6 +295,7 @@ git push -u origin main
 git config --global http.proxy http://127.0.0.1:3067
 git config --global https.proxy http://127.0.0.1:3067
 
+#检查网络连接
 Invoke-RestMethod -Uri http://httpbin.org/ip
 git ls-remote https://github.com/your-github-name/github-hunter-local.git
 ```
