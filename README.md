@@ -321,4 +321,28 @@ git ls-remote https://github.com/your-github-name/github-hunter-local.git
 - [Ilya Grigorik / GH Archive](https://www.gharchive.org) —— 持续 10+ 年免费开放的 GitHub 公共事件流。
 - [DuckDB](https://duckdb.org) —— 让"本地一份 parquet 目录当数据仓库用"成为可能。
 
+## 📊 数据来源（Data Sources）
+
+本项目的所有热度信号均来自以下公开数据源，特此致谢并标注：
+
+| 数据源 | 用途 | 协议 / 服务条款 |
+| --- | --- | --- |
+| [GH Archive](https://www.gharchive.org) | 提供 GitHub 全量事件流的 hourly `.json.gz` 归档 | [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) |
+| [GitHub REST API](https://docs.github.com/en/rest) | 拉取仓库元数据（描述、语言、Stars 等） | 遵守 [GitHub Acceptable Use Policies](https://docs.github.com/en/site-policy/acceptable-use-policies) |
+| [OpenRouter](https://openrouter.ai) (可选) | 生成日报 AI 摘要 | 遵守 [OpenRouter Terms](https://openrouter.ai/terms)，使用者自备 API Key |
+
+> Data sourced from GH Archive (licensed under CC BY 4.0) and the GitHub REST API.
+> AI summaries (when enabled) are generated via OpenRouter using the user's own API key.
+
+## ⚠️ 免责声明（Disclaimer）
+
+1. **学习与研究用途**：本项目仅供学习、研究与个人技术验证，不构成任何投资、商业或决策建议。基于本项目分析结果作出的任何判断与行动，使用者需自行承担全部责任。
+2. **数据准确性**：原始数据来自 GH Archive 与 GitHub Public API，可能因归档延迟、API 限流、上游事件丢失等原因出现遗漏或偏差。本项目不对数据的完整性、准确性、时效性作任何明示或暗示的保证。
+3. **AI 生成内容标识**：日报中的"项目摘要"与"开篇导读"由大语言模型自动生成，可能存在事实性错误或臆测，**仅供参考**。请结合原始仓库 README 与实际代码自行核实。生成内容遵循 [《生成式人工智能服务管理暂行办法》](https://www.cac.gov.cn/2023-07/13/c_1690898327029107.htm) 的标识要求。
+4. **第三方仓库内容**：本项目仅做公开统计，不对所列出仓库的代码质量、安全性、合法性背书。"幽灵仓库黑名单"等启发式判定结果可能存在误判，请勿据此对相关账号或代码作出定性结论。
+5. **使用风险自担**：依据 MIT 协议，本软件按"原样"提供，作者不对使用过程中产生的任何直接或间接损失承担责任。
+
+> This project is provided **​"AS IS"​** under the MIT License, for educational and research purposes only.
+> Outputs (including AI-generated summaries and heuristic blacklists) are advisory in nature and must be independently verified before use.
+
 *内容由 AI 生成仅供参考*

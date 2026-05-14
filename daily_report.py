@@ -1,4 +1,6 @@
 """
+*本报告数据来自 GH Archive (CC BY 4.0)；项目摘要由 AI 自动生成，仅供参考。*
+
 每日定时任务:
   - 在 .cache/ 上跑四种分析,写到 reports/
   - 可选:用 OpenRouter 生成一段 Markdown 总览(多模型自动降级)
