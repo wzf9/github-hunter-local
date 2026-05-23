@@ -2,7 +2,7 @@ name: Daily Report & Deploy to Pages
 
 on:
   schedule:
-    - cron: '0 1 * * *'
+    - cron: '0 1 * * *'        # 北京时间 9:00
   workflow_dispatch:
 
 permissions:
@@ -27,7 +27,6 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
-      # ✅ 将所有 Secret 写入 .env 文件
       - name: Create .env file
         run: |
           echo "GH_TOKEN=${{ secrets.GH_TOKEN }}" > .env
@@ -36,7 +35,6 @@ jobs:
           echo "REPORT_WEBHOOK_URL=${{ secrets.REPORT_WEBHOOK_URL }}" >> .env
           echo "REPORT_WEBHOOK_STYLE=${{ secrets.REPORT_WEBHOOK_STYLE }}" >> .env
 
-      # 运行脚本（环境变量也直接传入，防止脚本只读系统环境变量）
       - name: Run analysis and generate report
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
@@ -49,4 +47,48 @@ jobs:
           python analyze.py
           python daily_report.py
 
-      # 后续的生成 index、提交、部署步骤不变...
+      - name: Generate index page (with CSV links)
+        run: |
+          echo "# 🏆 GitHub Hunter 每日报告" > reports/index.md
+          echo "" >> reports/index.md
+          echo "📅 生成时间（UTC）: $(date -u +'%Y-%m-%d %H:%M')" >> reports/index.md
+          echo "" >> reports/index.md
+          echo "| 日期 | Markdown 报告 | CSV 数据 |" >> reports/index.md
+          echo "|------|--------------|----------|" >> reports/index.md
+
+          # 收集所有日期
+          for file in reports/daily_*.md reports/daily_*.csv; do
+            [ -f "$file" ] || continue
+            date_part=$(basename "$file" | sed 's/daily_//; s/\.md$//; s/\.csv$//')
+            echo "$date_part" >> /tmp/dates.txt
+          done
+          sort -ur /tmp/dates.txt -o /tmp/dates.txt
+
+          while read date; do
+            md_file="daily_${date}.md"
+            csv_file="daily_${date}.csv"
+            md_link=""
+            csv_link=""
+            [ -f "reports/$md_file" ] && md_link="[📄 查看]($md_file)"
+            [ -f "reports/$csv_file" ] && csv_link="[📥 下载]($csv_file)"
+            echo "| $date | $md_link | $csv_link |" >> reports/index.md
+          done < /tmp/dates.txt
+
+      - name: Commit and push reports
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add reports/
+          git diff --quiet && git diff --staged --quiet || git commit -m "🤖 更新每日报告 $(date +'%Y-%m-%d')"
+          git push
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: './reports'
+
+      - name: Deploy to GitHub Pages
+        uses: actions/deploy-pages@v4
