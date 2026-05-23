@@ -2,8 +2,8 @@ name: Daily Report & Deploy to Pages
 
 on:
   schedule:
-    - cron: '0 1 * * *'        # UTC 1:00，即北京时间 9:00
-  workflow_dispatch:           # 允许手动触发
+    - cron: '0 1 * * *'
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -98,7 +98,7 @@ jobs:
       - name: Add .nojekyll
         run: touch reports/.nojekyll
 
-      # 修改点：使用 -f 强制添加被 .gitignore 忽略的文件
+      # 这里已改为 -f
       - name: Commit and push reports
         run: |
           git config user.name "github-actions[bot]"
