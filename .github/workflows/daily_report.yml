@@ -1,0 +1,69 @@
+name: Daily Report & Deploy to Pages
+
+on:
+  schedule:
+    - cron: '0 1 * * *'        # 北京时间9:00
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+jobs:
+  generate-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run analysis and generate report
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          python main.py
+          python analyze.py
+          python daily_report.py
+
+      - name: Generate index page
+        run: |
+          echo "# 🏆 GitHub Hunter 每日报告" > reports/index.md
+          echo "" >> reports/index.md
+          echo "📅 生成时间（UTC）: $(date -u +'%Y-%m-%d %H:%M')" >> reports/index.md
+          echo "" >> reports/index.md
+          echo "| 日期 | 报告 |" >> reports/index.md
+          echo "|------|------|" >> reports/index.md
+          for file in $(ls -1 reports/daily_*.md | sort -r); do
+            date_part=$(basename "$file" .md | sed 's/daily_//')
+            echo "| $date_part | [查看报告]($(basename "$file")) |" >> reports/index.md
+          done
+          echo "" >> reports/index.md
+
+      - name: Commit and push reports
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add reports/
+          git diff --quiet && git diff --staged --quiet || git commit -m "🤖 更新每日报告 $(date +'%Y-%m-%d')"
+          git push
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: './reports'
+
+      - name: Deploy to GitHub Pages
+        uses: actions/deploy-pages@v4
