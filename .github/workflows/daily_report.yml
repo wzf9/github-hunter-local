@@ -6,31 +6,27 @@ on:
   workflow_dispatch:           # 允许手动触发
 
 permissions:
-  contents: write              # 允许推送报告到仓库
-  pages: write                 # 允许部署 Pages
-  id-token: write              # 用于 Pages 身份验证
+  contents: write
+  pages: write
+  id-token: write
 
 jobs:
   generate-and-deploy:
     runs-on: ubuntu-latest
     steps:
-      # 1. 检出仓库代码
       - name: Checkout repo
         uses: actions/checkout@v4
         with:
           persist-credentials: true
 
-      # 2. 设置 Python 环境
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
-      # 3. 安装依赖
       - name: Install dependencies
         run: pip install -r requirements.txt
 
-      # 4. 创建 .env 文件，注入所有密钥
       - name: Create .env file
         run: |
           echo "GH_TOKEN=${{ secrets.GH_TOKEN }}" > .env
@@ -39,14 +35,11 @@ jobs:
           echo "REPORT_WEBHOOK_URL=${{ secrets.REPORT_WEBHOOK_URL }}" >> .env
           echo "REPORT_WEBHOOK_STYLE=${{ secrets.REPORT_WEBHOOK_STYLE }}" >> .env
 
-      # 5. 确保 reports 目录存在（防止因目录缺失导致脚本报错）
       - name: Ensure reports directory exists
         run: mkdir -p reports
 
-      # 6. 运行分析脚本，生成 Markdown 报告和 CSV
       - name: Run analysis scripts
         env:
-          # 同样以环境变量形式传入，兼容不需要 .env 文件的脚本
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           OPENROUTER_MODEL: ${{ secrets.OPENROUTER_MODEL }}
@@ -57,7 +50,6 @@ jobs:
           python analyze.py
           python daily_report.py
 
-      # 7. 生成美观的 HTML 首页，列出所有报告和 CSV 文件
       - name: Generate index.html
         run: |
           cat > reports/index.html << 'EOF'
@@ -84,15 +76,12 @@ jobs:
             <table>
               <tr><th>日期</th><th>Markdown 报告</th><th>CSV 数据</th></tr>
           EOF
-
-          # 遍历所有 daily_*.md 和 daily_*.csv，收集唯一日期并倒序
           for file in reports/daily_*.md reports/daily_*.csv; do
             [ -f "$file" ] || continue
             date_part=$(basename "$file" | sed 's/daily_//; s/\.md$//; s/\.csv$//')
             echo "$date_part" >> /tmp/dates.txt
           done
           sort -ur /tmp/dates.txt -o /tmp/dates.txt
-
           while read date; do
             md_file="daily_${date}.md"
             csv_file="daily_${date}.csv"
@@ -102,34 +91,29 @@ jobs:
             [ -f "reports/$csv_file" ] && csv_link="<a href='$csv_file'>📥 下载</a>"
             echo "<tr><td>$date</td><td>$md_link</td><td>$csv_link</td></tr>" >> reports/index.html
           done < /tmp/dates.txt
-
           echo "</table>" >> reports/index.html
           echo "<div class='footer'>自动生成于 GitHub Actions | 仓库: ${{ github.repository }}</div>" >> reports/index.html
           echo "</body></html>" >> reports/index.html
 
-      # 8. 添加 .nojekyll 文件，防止 GitHub Pages 默认 Jekyll 处理
       - name: Add .nojekyll
         run: touch reports/.nojekyll
 
-      # 9. 将所有报告和索引推回仓库（可选，方便在 GitHub 上直接查看）
+      # 修改点：使用 -f 强制添加被 .gitignore 忽略的文件
       - name: Commit and push reports
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add reports/
+          git add -f reports/
           git diff --quiet && git diff --staged --quiet || git commit -m "🤖 更新每日报告 $(date +'%Y-%m-%d')"
           git push
 
-      # 10. 配置 Pages
       - name: Setup Pages
         uses: actions/configure-pages@v5
 
-      # 11. 上传 reports 目录作为部署产物
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
           path: './reports'
 
-      # 12. 部署到 GitHub Pages
       - name: Deploy to GitHub Pages
         uses: actions/deploy-pages@v4
