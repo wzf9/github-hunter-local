@@ -2,8 +2,8 @@ name: Daily Report & Deploy to Pages
 
 on:
   schedule:
-    - cron: '0 1 * * *'
-  workflow_dispatch:
+    - cron: '0 1 * * *'        # UTC 1:00，即北京时间 9:00
+  workflow_dispatch:           # 允许手动触发
 
 permissions:
   contents: write
@@ -52,7 +52,8 @@ jobs:
 
       - name: Generate index.html
         run: |
-          cat > reports/index.html << 'EOF'
+          # 写入 HTML 头部，时间变量会展开
+          cat > reports/index.html << EOF
           <!DOCTYPE html>
           <html lang="zh-CN">
           <head>
@@ -76,12 +77,15 @@ jobs:
             <table>
               <tr><th>日期</th><th>Markdown 报告</th><th>CSV 数据</th></tr>
           EOF
+
+          # 收集所有日期并生成表格行
           for file in reports/daily_*.md reports/daily_*.csv; do
             [ -f "$file" ] || continue
             date_part=$(basename "$file" | sed 's/daily_//; s/\.md$//; s/\.csv$//')
             echo "$date_part" >> /tmp/dates.txt
           done
           sort -ur /tmp/dates.txt -o /tmp/dates.txt
+
           while read date; do
             md_file="daily_${date}.md"
             csv_file="daily_${date}.csv"
@@ -91,14 +95,17 @@ jobs:
             [ -f "reports/$csv_file" ] && csv_link="<a href='$csv_file'>📥 下载</a>"
             echo "<tr><td>$date</td><td>$md_link</td><td>$csv_link</td></tr>" >> reports/index.html
           done < /tmp/dates.txt
-          echo "</table>" >> reports/index.html
-          echo "<div class='footer'>自动生成于 GitHub Actions | 仓库: ${{ github.repository }}</div>" >> reports/index.html
-          echo "</body></html>" >> reports/index.html
+
+          # 写入尾部
+          cat >> reports/index.html << 'EOF'
+          </table>
+          <div class='footer'>自动生成于 GitHub Actions | 仓库: ${{ github.repository }}</div>
+          </body></html>
+          EOF
 
       - name: Add .nojekyll
         run: touch reports/.nojekyll
 
-      # 这里已改为 -f
       - name: Commit and push reports
         run: |
           git config user.name "github-actions[bot]"
