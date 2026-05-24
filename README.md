@@ -1,5 +1,6 @@
 # 🚀 GitHub Hunter · 本地化版
-
+> **在线仪表盘**：[https://wzf9.github.io/github-hunter-local](https://wzf9.github.io/github-hunter-local)  
+> 实时查看最近24小时热点榜单、加速榜、黑马候选等分析结果。
 > **在项目爆火前的 24 小时,通过 GitHub 全量事件流捕捉潜在大黑马。**
 > 不依赖 BigQuery、不依赖 GCP,纯本地 parquet 倒排索引 + DuckDB SQL。
 
