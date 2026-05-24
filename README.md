@@ -301,6 +301,52 @@ Invoke-RestMethod -Uri http://httpbin.org/ip
 git ls-remote https://github.com/your-github-name/github-hunter-local.git
 ```
 
+### 修改同步到本地仓库和github
+```python
+#pip freeze > requirements.txt
+mkdir -p .github/workflows
+code-insiders .github/workflows/daily_report.yml
+
+git status
+git add .github/workflows/daily_report.yml
+git commit -m "添加每日报告自动生成与Pages部署工作流"
+git commit -m "索引页同时展示 Markdown 报告 和 CSV 数据文件的链接"
+git commit -m "将 git add reports/ 改为 git add -f reports/:强制添加被 .gitignore 排除的文件。这样即使本地开发时不想提交报告，Actions 环境也能正常推送"
+git commit -m "正确显示日报时间/csv文件"
+git push
+git pull origin main
+git push origin main
+#Git 会尝试自动合并远程和本地改动。如果有冲突，按提示解决即可（冲突很可能发生在 daily_report.yml 文件上，因为我们都修改了它）
+git pull origin main --no-rebase
+
+#about添加url
+https://wzf9.github.io/github-hunter-local
+code-insiders readme.md
+# 编辑 README.md，添加上面的链接
+git add README.md
+git commit -m "docs: add GitHub Pages URL to README"
+git push origin main
+
+git status
+git add build_website.py          # 新增的网站生成脚本
+git add web/     # 生成的仪表盘页面（如果有）
+git commit -m "feat: add website generator for GitHub Pages dashboard"
+git push origin main
+
+# 1. 获取远程最新状态
+git fetch origin
+# 2. 将本地提交“变基”到远程 main 分支之上（保持历史干净）
+git pull --rebase origin main
+
+# 如果出现冲突，需要手动解决冲突文件，然后：
+#   git add <已解决的文件>
+#   git rebase --continue
+
+# 3. 推送本地变更到远程
+git push origin main
+```
+
+
 ## 🛣️ Roadmap
 
 - [ ] **聚合搜索**:集成 ProductHunt / HackerNews / arXiv 数据源,做跨平台热度交叉验证。
